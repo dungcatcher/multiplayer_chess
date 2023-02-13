@@ -28,6 +28,7 @@ class GraphicalPiece:
         self.image = piece_images[piece_id]
         self.pos = pos
         self.rect = self.image.get_rect(center=(board_rect.left + 60 * pos[0] + 30, board_rect.top + 60 * pos[1] + 30))
+        self.moves = []
 
     def draw(self, window):
         window.blit(self.image, self.rect)

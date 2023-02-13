@@ -1,6 +1,6 @@
 class Move:
-    def __init__(self, start, pos, flags=None):
+    def __init__(self, start, end, flags=None):
         if flags is None:
             self.flags = []
         self.start = start
-        self.pos = pos
+        self.end = end
