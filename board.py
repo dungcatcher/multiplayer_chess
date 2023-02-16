@@ -29,3 +29,12 @@ class Board:
                         moves += piece_moves
 
         return moves
+
+    def fetch_moves_from_square(self, pos):
+        moves = []
+
+        for move in self.all_moves:
+            if move.start == pos:
+                moves.append(move)
+
+        return moves

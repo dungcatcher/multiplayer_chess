@@ -6,8 +6,8 @@ import pickle
 import random
 import string
 
-HOST = "10.0.0.105"
-PORT = 65431
+HOST = "10.182.138.127"
+PORT = 1194
 
 
 class GameServer:
