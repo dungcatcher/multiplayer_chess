@@ -24,8 +24,6 @@ class Board:
                 if self.position[y][x] is not None:
                     if self.position[y][x][0] == colour:
                         piece_moves = gen_piece_moves(self, (x, y))
-                        for move in piece_moves:
-                            print(move.start, move.end)
                         moves += piece_moves
 
         return moves
