@@ -6,8 +6,8 @@ import pickle
 import random
 import string
 
-HOST = "10.0.0.105"
-PORT = 65431
+HOST = "localhost"
+PORT = 1194
 
 
 class GameServer:
@@ -18,6 +18,7 @@ class GameServer:
 
         self.clients = set()
         self.games = {}
+        self.game_id_players = {}  # game_id: [players]
 
         connection_thread = Thread(target=self.handle_connections, daemon=True)
         connection_thread.start()
@@ -60,13 +61,20 @@ class GameServer:
             colour = "white"
         else:
             colour = "black"
+
         initial_data = {
             "colour": colour,
             "game_id": client_assigned_game,
-            "board": pickle.dumps(self.games[client_assigned_game].board)
+            "game": pickle.dumps(self.games[client_assigned_game])
         }
+
+        if client_assigned_game not in self.game_id_players:
+            self.game_id_players[client_assigned_game] = [client_socket]
+        else:
+            self.game_id_players[client_assigned_game].append(client_socket)
 
         initial_data_packet = Packet('initial', None, initial_data)
         serialized_data_packet = pickle.dumps(initial_data_packet)
 
-        client_socket.sendall(serialized_data_packet)
+        for client in self.game_id_players[client_assigned_game]:
+            client.sendall(serialized_data_packet)
