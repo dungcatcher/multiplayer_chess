@@ -16,16 +16,47 @@ class GameServer:
         self.socket.bind((HOST, PORT))
         print('Server has started, waiting for clients...')
 
-        self.clients = set()
+        self.clients = []
+        self.queueing = []
         self.games = {}
         self.game_id_players = {}  # game_id: [players]
 
         connection_thread = Thread(target=self.handle_connections, daemon=True)
         connection_thread.start()
 
+    def get_response(self, socket):
+        response = socket.recv(4096)
+        response_object = pickle.loads(response)
+        return response_object
+
     def update(self):
         while True:
-            pass
+            if len(self.queueing) >= 2:  # Match making
+                reference_queuer = random.choice(self.queueing)
+                available_opponents = self.queueing
+                available_opponents.remove(reference_queuer)
+                opponent = random.choice(available_opponents)
+
+                new_game_id = self.gen_game_id()
+                new_game = Game()
+                self.games[new_game_id] = new_game
+
+                self.game_id_players[new_game_id] = [reference_queuer, opponent]
+                reference_queuer_data = {
+                    "colour": "w",
+                    "game_id": new_game_id,
+                    "game": pickle.dumps(new_game)
+                }
+                reference_queuer_packet = Packet('initial', None, reference_queuer_data)
+                reference_queuer.sendall(pickle.dumps(reference_queuer_packet))
+
+                opponent_queuer_data = {
+                    "colour": "b",
+                    "game_id": new_game_id,
+                    "game": pickle.dumps(new_game)
+                }
+                opponent_queuer_packet = Packet('initial', None, opponent_queuer_data)
+                opponent.sendall(pickle.dumps(opponent_queuer_packet))
 
     def handle_connections(self):
         self.socket.listen()
@@ -37,44 +68,29 @@ class GameServer:
 
     def gen_game_id(self):
         while True:
-            new_game_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            new_game_id = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=6))
             if new_game_id not in self.games.keys():
                 return new_game_id
 
     def client_handler(self, client_socket, addr):
-        self.clients.add(client_socket)
-        client_assigned_game = None
+        self.clients.append(client_socket)
+        self.queueing.append(client_socket)
 
-        if self.games:
-            for game_id, game in self.games.items():  # Search for games waiting for an opponent
-                if game.status == 'waiting':
-                    client_assigned_game = game_id
-                    game.status = 'playing'
-        else:
-            new_game_id = self.gen_game_id()
-            new_game = Game()
-            self.games[new_game_id] = new_game
-            client_assigned_game = new_game_id
+        while True:
+            response = self.get_response(client_socket)
+            if not response:
+                break
+            else:
+                if response.type == 'update':
+                    if response.description == 'move':
+                        game_id = response.data['game_id']
+                        move = response.data['move']
+                        self.games[game_id].board.make_move(move)
 
-        # Initial data
-        if len(self.clients) == 1:
-            colour = "white"
-        else:
-            colour = "black"
-
-        initial_data = {
-            "colour": colour,
-            "game_id": client_assigned_game,
-            "game": pickle.dumps(self.games[client_assigned_game])
-        }
-
-        if client_assigned_game not in self.game_id_players:
-            self.game_id_players[client_assigned_game] = [client_socket]
-        else:
-            self.game_id_players[client_assigned_game].append(client_socket)
-
-        initial_data_packet = Packet('initial', None, initial_data)
-        serialized_data_packet = pickle.dumps(initial_data_packet)
-
-        for client in self.game_id_players[client_assigned_game]:
-            client.sendall(serialized_data_packet)
+                        update_data = {
+                            'move': move,
+                            'game': self.games[game_id]
+                        }
+                        update_packet = Packet('update', 'move', update_data)
+                        for player in self.game_id_players[game_id]:
+                            player.sendall(pickle.dumps(update_packet))

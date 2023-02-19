@@ -24,11 +24,24 @@ def load_piece_images():
 
 
 class GraphicalPiece:
-    def __init__(self, piece_id, pos, board_rect):
+    def __init__(self, piece_id, pos, board_rect, flipped=False):
+        self.piece_id = piece_id
         self.image = piece_images[piece_id]
         self.pos = pos
         self.rect = self.image.get_rect(center=(board_rect.left + 60 * pos[0] + 30, board_rect.top + 60 * pos[1] + 30))
+        self.flipped = flipped
+        if flipped:
+            self.flip(board_rect)
         self.moves = []
+
+    def update_move(self, move, board_rect):
+        self.pos = move.end
+        self.rect = self.image.get_rect(center=(board_rect.left + 60 * self.pos[0] + 30, board_rect.top + 60 * self.pos[1] + 30))
+        if self.flipped:
+            self.flip(board_rect)
+
+    def flip(self, board_rect):
+        self.rect = self.image.get_rect(center=(board_rect.left + 60 * (7 - self.pos[0]) + 30, board_rect.top + 60 * (7 - self.pos[1]) + 30))
 
     def draw(self, window):
         window.blit(self.image, self.rect)

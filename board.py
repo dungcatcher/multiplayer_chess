@@ -36,3 +36,12 @@ class Board:
                 moves.append(move)
 
         return moves
+
+    def make_move(self, move):
+        piece_id = self.position[move.start[1]][move.start[0]]
+        self.position[move.end[1]][move.end[0]] = piece_id
+        self.position[move.start[1]][move.start[0]] = None
+        print(move.start, move.end)
+
+        self.turn = 'b' if self.turn == 'w' else 'w'
+        self.all_moves = self.gen_all_moves(self.turn)
