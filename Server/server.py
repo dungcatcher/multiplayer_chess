@@ -32,23 +32,21 @@ class GameServer:
     def update(self):
         while True:
             if len(self.queueing) >= 2:  # Match making
-                reference_queuer = random.choice(self.queueing)
-                available_opponents = self.queueing
-                available_opponents.remove(reference_queuer)
-                opponent = random.choice(available_opponents)
+                white_player = self.queueing[0]
+                opponent = self.queueing[1]
 
                 new_game_id = self.gen_game_id()
                 new_game = Game()
                 self.games[new_game_id] = new_game
 
-                self.game_id_players[new_game_id] = [reference_queuer, opponent]
+                self.game_id_players[new_game_id] = [white_player, opponent]
                 reference_queuer_data = {
                     "colour": "w",
                     "game_id": new_game_id,
                     "game": pickle.dumps(new_game)
                 }
                 reference_queuer_packet = Packet('initial', None, reference_queuer_data)
-                reference_queuer.sendall(pickle.dumps(reference_queuer_packet))
+                white_player.sendall(pickle.dumps(reference_queuer_packet))
 
                 opponent_queuer_data = {
                     "colour": "b",
@@ -57,6 +55,9 @@ class GameServer:
                 }
                 opponent_queuer_packet = Packet('initial', None, opponent_queuer_data)
                 opponent.sendall(pickle.dumps(opponent_queuer_packet))
+
+                self.queueing.remove(white_player)
+                self.queueing.remove(opponent)
 
     def handle_connections(self):
         self.socket.listen()

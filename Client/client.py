@@ -133,6 +133,8 @@ class GameClient:
                     self.game_id = response.data['game_id']
                     self.game = pickle.loads(response.data['game'])
 
+                    pygame.display.set_caption(self.game_id)
+
                     self.load_pieces()
                 elif response.type == 'update':
                     if response.description == 'move':
