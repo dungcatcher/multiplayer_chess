@@ -1,4 +1,5 @@
 from move import Move
+import copy
 
 
 def gen_absolute_moves(board, pos, vectors):
@@ -35,6 +36,33 @@ def gen_sliding_moves(board, pos, vectors):
                 break
 
     return moves
+
+
+def check_piece_attackers(board, moves, piece):
+    for move in moves:
+        if 'capture' in move.flags:
+            if board.position[move.end[1]][move.end[0]][1] == piece:
+                return True
+
+    return False
+
+
+def in_check(board, colour):
+    king_pos = board.w_king_pos if colour == 'w' else board.b_king_pos
+
+    piece_moves = {
+        'n': gen_knight_moves(board, king_pos),
+        'b': gen_bishop_moves(board, king_pos),
+        'r': gen_rook_moves(board, king_pos),
+        'q': gen_queen_moves(board, king_pos),
+        'k': gen_king_moves(board, king_pos)
+    }
+
+    for piece, moves in piece_moves.items():
+        if check_piece_attackers(board, moves, piece):
+            return True
+
+    return False
 
 
 def gen_pawn_moves(board, pos):
@@ -93,18 +121,32 @@ def gen_king_moves(board, pos):
     return moves
 
 
-def gen_piece_moves(board, pos):
+def gen_piece_moves(board, pos, filter_illegal=True):
+    moves = []
+
     if board.position[pos[1]][pos[0]][1] == 'p':
-        return gen_pawn_moves(board, pos)
+        moves = gen_pawn_moves(board, pos)
     elif board.position[pos[1]][pos[0]][1] == 'n':
-        return gen_knight_moves(board, pos)
+        moves = gen_knight_moves(board, pos)
     elif board.position[pos[1]][pos[0]][1] == 'b':
-        return gen_bishop_moves(board, pos)
+        moves = gen_bishop_moves(board, pos)
     elif board.position[pos[1]][pos[0]][1] == 'r':
-        return gen_rook_moves(board, pos)
+        moves = gen_rook_moves(board, pos)
     elif board.position[pos[1]][pos[0]][1] == 'q':
-        return gen_queen_moves(board, pos)
+        moves = gen_queen_moves(board, pos)
     elif board.position[pos[1]][pos[0]][1] == 'k':
-        return gen_king_moves(board, pos)
+        moves = gen_king_moves(board, pos)
 
+    if filter_illegal:
+        colour = board.position[pos[1]][pos[0]][0]
 
+        new_moves = []
+        for move in moves:
+            new_board = copy.deepcopy(board)
+            new_board.make_move(move, gen_new_moves=False)
+            if not in_check(new_board, colour):
+                new_moves.append(move)
+
+        return new_moves
+    else:
+        return moves

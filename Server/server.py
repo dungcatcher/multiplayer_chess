@@ -40,6 +40,8 @@ class GameServer:
                 self.games[new_game_id] = new_game
 
                 self.game_id_players[new_game_id] = [white_player, opponent]
+
+                print(new_game.board.all_moves)
                 reference_queuer_data = {
                     "colour": "w",
                     "game_id": new_game_id,
