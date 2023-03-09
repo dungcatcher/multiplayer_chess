@@ -125,6 +125,7 @@ class GameClient:
 
         while True:
             response = self.get_response()
+            print(response)
             if not response:
                 break
             else:
@@ -132,8 +133,6 @@ class GameClient:
                     self.colour = response.data['colour']
                     self.game_id = response.data['game_id']
                     self.game = pickle.loads(response.data['game'])
-
-                    pygame.display.set_caption(self.game_id)
 
                     self.load_pieces()
                 elif response.type == 'update':
